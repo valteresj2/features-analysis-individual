@@ -32,7 +32,7 @@ def transform_table(x):
 
 
 class FAI(object):
-    def __init__(self,dt=None,dt_test=None,dt_prod=None,target=None,path=None):
+    def __init__(self,dt=None,dt_test=None,dt_prod=None,n_bins=5,label=None,target=None,path=None):
         if dt is not None:
             self.dt=dt.copy()
         else:
@@ -47,6 +47,8 @@ class FAI(object):
             self.dt_prod=dt_prod
         self.target=target
         self.path=path
+        self.label=label
+        self.n_bins=n_bins
     
     def adherence(self):
     
@@ -203,11 +205,11 @@ class FAI(object):
             
                 labels=self.dt[self.target].unique()
                 ks=stats.ks_2samp(self.dt.loc[self.dt[self.target]==labels[0],i], self.dt.loc[self.dt[self.target]!=labels[0],i]).statistic
-                quant=np.arange(0,1,0.1)
+                quant=np.arange(0,1,(10/self.n_bins)/10)
                 quant.put(len(quant)-1,1)
                 bins=np.nanquantile(self.dt[i],quant)
                 bins=np.unique(bins)
-                if len(bins)>1:
+                if len(bins)>2:
                     vv=pd.cut(self.dt[i],bins, include_lowest=True)
                 else:
                     vv=self.dt[i].astype('str')
@@ -230,6 +232,8 @@ class FAI(object):
                 tot.extend([ref_prob_class[i] for i in self.dt[self.target].unique()])
                 tab_ref=pd.concat([tab_ref,pd.DataFrame([tot],columns=tab_ref.columns)])
                 tab_ref.reset_index(drop=True,inplace=True)
+                if self.label is not None:
+                    tab_ref.drop(columns=['Perc_'+str(self.dt[self.target].unique()[self.dt[self.target].unique()!=self.label][0])],inplace=True)
                 
                 ###entropy
                 
@@ -272,6 +276,9 @@ class FAI(object):
                 tab_ref['KS']=ks
                 #tab_ref['ROC_AUC']=auc
                 tab_ref['RR']=rr
+                tab_ref.insert(4,'Total%',tab_ref['Total']/tab_ref.loc[tab_ref.shape[0]-1,'Total'])
+                if self.label is not None:
+                    tab_ref.drop(columns=['Perc_'+str(self.dt[self.target].unique()[self.dt[self.target].unique()!=self.label][0])],inplace=True)
                 
             else:
                 labels=self.dt[self.target].unique()
@@ -307,6 +314,9 @@ class FAI(object):
                     p2=tab_ref.loc[k,self.dt[self.target].unique()[1]]/tab_ref.loc[tab_ref.shape[0]-1,self.dt[self.target].unique()[1]]
                     rr[k]=p1/(p2+0.0001)
                 tab_ref['RR']=rr
+                tab_ref.insert(4,'Total%',tab_ref['Total']/tab_ref.loc[tab_ref.shape[0]-1,'Total'])
+                if self.label is not None:
+                    tab_ref.drop(columns=['Perc_'+str(self.dt[self.target].unique()[self.dt[self.target].unique()!=self.label][0])],inplace=True)
                 
             dict_values[i]=tab_ref
         dfs = [dict_values[i] for i in dict_values.keys()]
