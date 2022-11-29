@@ -92,6 +92,11 @@ class FAI(object):
                 tab_final=pd.DataFrame({i:tab_ref.index,'test':tab_ref.values,'prod':match_value})
                 tab_final['Perc_'+'test']=tab_final.loc[:,'test']/tab_final.loc[:,'test'].sum()
                 tab_final['Perc_'+'prod']=tab_final.loc[:,'prod']/tab_final.loc[:,'prod'].sum()
+                a_perc=np.where(tab_final['Perc_'+'test']==0,0.0001,tab_final['Perc_'+'test'])
+                b_perc=np.where(tab_final['Perc_'+'prod']==0,0.0001,tab_final['Perc_'+'prod'])
+                tab_final['PSI']=(a_perc-b_perc)*np.log(a_perc/b_perc)
+                
+                
                 tab_final['ALERT']=np.where((abs(tab_final['Perc_'+'test']-tab_final['Perc_'+'prod'])>=0.05) | (tab_final['Perc_'+'test']==0),True,False)
                 
     #            esperado=sum(tab_final[i+'_prod'])*tab_final['Perc_'+i+'_test']
@@ -103,14 +108,14 @@ class FAI(object):
                 tab_final.index=tab_final[i]
                 tab_final=tab_final.sort_index()
                 tab_final=tab_final.reset_index(drop=True)
-                tab_final=tab_final.loc[:,[i,'test','prod','Perc_'+'test','Perc_'+'prod','ALERT']]
+                tab_final=tab_final.loc[:,[i,'test','prod','Perc_'+'test','Perc_'+'prod','PSI','ALERT']]
                 
                 tot=['Total']
-                tot.extend([tab_final['test'].sum(),tab_final['prod'].sum(),1,1,False])
+                tot.extend([tab_final['test'].sum(),tab_final['prod'].sum(),1,1,tab_final['PSI'].sum(),False])
                 tab_final=pd.concat([tab_final,pd.DataFrame([tot],columns=tab_final.columns)])
                 tab_final.reset_index(drop=True,inplace=True)
                 
-                
+                tab_final.loc[len(tab_final)-1,'ALERT']=np.where(tab_final.loc[len(tab_final)-1,'PSI']>0.1,True,False)
                 
                 dict_values[i]=[tab_final,correlate,type_var[i]]
                 
@@ -323,6 +328,7 @@ class FAI(object):
         if self.path is not None:
             multiple_dfs(dfs, 'Bivariada', self.path+'/bivariada.xlsx', 1)
         return dict_values
+        
         
 
 
