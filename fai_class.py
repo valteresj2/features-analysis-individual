@@ -122,7 +122,7 @@ class FAI(object):
             elif(type_var[i]!='object') & (self.dt_test[i].std()>0):
                 ks=stats.ks_2samp(self.dt_test[i], self.dt_prod[i]).statistic
                 quant=np.arange(0,1,0.10)
-                quant.put(len(quant)-1,1)
+                quant = np.append(quant,1)
                 bins=np.nanquantile(self.dt_test[i],quant)
                 bins=np.unique(bins)
                      
@@ -211,7 +211,7 @@ class FAI(object):
                 labels=self.dt[self.target].unique()
                 ks=stats.ks_2samp(self.dt.loc[self.dt[self.target]==labels[0],i], self.dt.loc[self.dt[self.target]!=labels[0],i]).statistic
                 quant=np.arange(0,1,(10/self.n_bins)/10)
-                quant.put(len(quant)-1,1)
+                quant = np.append(quant,1)
                 bins=np.nanquantile(self.dt[i],quant)
                 bins=np.unique(bins)
                 if len(bins)>2:
